@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="ParamSpider logo">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ad1457" />
+      <stop offset="100%" stop-color="#111111" />
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="104" height="104" rx="22" fill="url(#g)" />
+  <circle cx="60" cy="60" r="43" fill="none" stroke="#ffc2df" stroke-width="4" stroke-dasharray="7 5" />
+  <text x="60" y="68" fill="#f6f6f6" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="700" text-anchor="middle">PS</text>
+</svg>

@@ -1,0 +1,13 @@
+{
+  "name": "web-mr-team",
+  "version": "1.0.0",
+  "description": "Mr Team - Official Developer & Cyber Security Unit",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [],
+  "author": "Mr Team",
+  "license": "MIT"
+}
