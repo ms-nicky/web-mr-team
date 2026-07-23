@@ -49,6 +49,7 @@
       <a href="#stack">Stack</a>
       <a href="#members">Members</a>
       <a href="#contact">Contact</a>
+      <a href="/login.html" class="nav-login">Login</a>
     </nav>
   </header>
 
@@ -272,61 +273,8 @@
         <span class="section-tag">05 / Team</span>
         <h2>Team Operators</h2>
       </div>
-      <div class="member-grid">
-        <article class="member-card">
-          <div class="member-img-wrap">
-            <img src="assets/Ms1397.png" alt="Ms 1397" width="600" height="600" loading="lazy" decoding="async">
-          </div>
-          <div class="member-body">
-            <h3>Ms 1397</h3>
-            <p class="member-role">Offensive Security &amp; Exploit Research</p>
-            <span class="member-tag">Red Team</span>
-          </div>
-        </article>
-
-        <article class="member-card">
-          <div class="member-img-wrap">
-            <img src="assets/Ms3000.png" alt="Ms 3000" width="600" height="600" loading="lazy" decoding="async">
-          </div>
-          <div class="member-body">
-            <h3>Ms 3000</h3>
-            <p class="member-role">Secure Engineering &amp; Threat Intelligence</p>
-            <span class="member-tag">Blue Team</span>
-          </div>
-        </article>
-
-        <article class="member-card">
-          <div class="member-img-wrap">
-            <img src="assets/MsXDROID.png" alt="Ms XDROID" width="600" height="600" loading="lazy" decoding="async">
-          </div>
-          <div class="member-body">
-            <h3>Ms XDROID</h3>
-            <p class="member-role">Reverse Engineer &amp; EvilZero</p>
-            <span class="member-tag">RE / Malware</span>
-          </div>
-        </article>
-
-        <article class="member-card">
-          <div class="member-img-wrap">
-            <img src="assets/MsOnion.png" alt="Ms Onion" width="600" height="600" loading="lazy" decoding="async">
-          </div>
-          <div class="member-body">
-            <h3>Ms Onion</h3>
-            <p class="member-role">Web Security &amp; Penetration Testing</p>
-            <span class="member-tag">WebSec</span>
-          </div>
-        </article>
-
-        <article class="member-card">
-          <div class="member-img-wrap">
-            <img src="assets/MsCOR1l.png" alt="MsCOR1l" width="600" height="600" loading="lazy" decoding="async">
-          </div>
-          <div class="member-body">
-            <h3>MsCOR1l</h3>
-            <p class="member-role">Anti-Scam Intelligence &amp; Victim Support</p>
-            <span class="member-tag">OSINT</span>
-          </div>
-        </article>
+      <div class="member-grid" id="member-grid">
+        <p class="empty-text" style="grid-column:1/-1">Memuat data team...</p>
       </div>
     </section>
 
@@ -392,6 +340,35 @@
   </footer>
 
   <script src="js/script.js"></script>
+  <script>
+    (async function() {
+      const grid = document.getElementById('member-grid');
+      if (!grid) return;
+      try {
+        const res = await fetch('/api/team');
+        const data = await res.json();
+        const team = data.team || [];
+        if (team.length === 0) {
+          grid.innerHTML = '<p class="empty-text" style="grid-column:1/-1">Belum ada team operators.</p>';
+          return;
+        }
+        grid.innerHTML = team.map(t => `
+          <article class="member-card">
+            <div class="member-img-wrap">
+              ${t.image ? `<img src="${t.image}" alt="${t.name}" width="600" height="600" loading="lazy" decoding="async">` : ''}
+            </div>
+            <div class="member-body">
+              <h3>${t.name}</h3>
+              <p class="member-role">${t.role}</p>
+              <span class="member-tag">${t.tag}</span>
+            </div>
+          </article>
+        `).join('');
+      } catch (err) {
+        grid.innerHTML = '<p class="empty-text" style="grid-column:1/-1">Gagal memuat data team.</p>';
+      }
+    })();
+  </script>
 </body>
 
 </html>

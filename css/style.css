@@ -160,6 +160,17 @@ nav a:hover {
   background: rgba(255,255,255,0.05);
 }
 
+.nav-login {
+  color: var(--red-soft) !important;
+  border: 1px solid rgba(242,16,16,0.3) !important;
+  background: rgba(242,16,16,0.08) !important;
+}
+
+.nav-login:hover {
+  background: rgba(242,16,16,0.15) !important;
+  border-color: rgba(242,16,16,0.5) !important;
+}
+
 /* ──────────────────────────────────────────
    LAYOUT
 ────────────────────────────────────────── */
@@ -840,4 +851,183 @@ body.reveal-ready .reveal.visible {
   body.reveal-ready .reveal { transition: none; }
   body.reveal-ready .reveal,
   body.reveal-ready .reveal.visible { opacity: 1; transform: none; }
+}
+
+/* ──────────────────────────────────────────
+   LOGIN PAGE
+────────────────────────────────────────── */
+.login-section {
+  min-height: calc(100vh - 120px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(20px, 4vw, 40px);
+}
+
+.login-box {
+  width: min(420px, 100%);
+  background: linear-gradient(160deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: clamp(28px, 5vw, 44px);
+  position: relative;
+  overflow: hidden;
+  animation: fade-up 520ms ease;
+}
+
+.login-box::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 40% at 90% 0%, var(--red-dim) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 32px;
+  position: relative;
+}
+
+.login-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(242,16,16,0.1);
+  border: 1px solid rgba(242,16,16,0.25);
+  color: var(--red-soft);
+  margin-bottom: 18px;
+}
+
+.login-header h1 {
+  font-family: "Orbitron", sans-serif;
+  font-size: clamp(1.4rem, 3vw, 1.8rem);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.login-header p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.login-form {
+  display: grid;
+  gap: 18px;
+  position: relative;
+}
+
+.login-field {
+  display: grid;
+  gap: 8px;
+}
+
+.login-field label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.login-field input {
+  width: 100%;
+  min-height: 48px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  color: #fff;
+  font-family: "Chakra Petch", sans-serif;
+  font-size: 0.95rem;
+  transition: border-color var(--trans), box-shadow var(--trans);
+  outline: none;
+}
+
+.login-field input::placeholder {
+  color: #555;
+}
+
+.login-field input:focus {
+  border-color: var(--border-hi);
+  box-shadow: 0 0 0 3px var(--red-dim);
+}
+
+.login-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+
+.login-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #aaa;
+  cursor: pointer;
+  user-select: none;
+}
+
+.login-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--red-soft);
+  cursor: pointer;
+}
+
+.login-btn {
+  width: 100%;
+  min-height: 50px;
+  font-size: 1rem;
+  letter-spacing: 1px;
+  margin-top: 4px;
+}
+
+.login-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.login-feedback {
+  color: #d0d0d0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  min-height: 20px;
+  text-align: center;
+}
+
+.login-feedback.error {
+  color: var(--red-soft);
+}
+
+.login-feedback.success {
+  color: #4ade80;
+}
+
+.login-footer {
+  margin-top: 28px;
+  text-align: center;
+  color: #444;
+  font-size: 0.75rem;
+  letter-spacing: 0.3px;
+  position: relative;
+}
+
+@media (max-width: 480px) {
+  .login-box {
+    padding: 24px 20px;
+  }
+
+  .login-options {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
 }
