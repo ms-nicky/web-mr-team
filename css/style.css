@@ -611,6 +611,8 @@ h2 {
   gap: 12px;
 }
 
+.grid-span { grid-column: 1 / -1; }
+
 .member-card {
   border-radius: var(--radius-lg);
   overflow: hidden;
@@ -734,6 +736,14 @@ h2 {
   font-size: 0.95rem;
   line-height: 1.5;
   min-height: 24px;
+}
+
+.support-feedback.error {
+  color: #ff6b6b;
+}
+
+.support-feedback.success {
+  color: #51cf66;
 }
 
 /* ──────────────────────────────────────────

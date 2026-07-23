@@ -20,6 +20,47 @@
     });
   }
 
+  /* ── Auth ── */
+  let currentUser = null;
+  let userRole = '';
+  const allowedRoles = ['komandan', 'admin', 'moderator'];
+  let canManage = false;
+
+  const sidebarUsername = document.getElementById('sidebar-username');
+
+  async function checkSession() {
+    try {
+      const res = await fetch('/api/session', { credentials: 'same-origin' });
+      if (!res.ok) { window.location.href = '/login'; return false; }
+      const data = await res.json();
+      currentUser = data.user;
+      userRole = currentUser?.role || '';
+      canManage = allowedRoles.includes(userRole);
+      if (sidebarUsername) sidebarUsername.textContent = currentUser.username;
+      if (!canManage) {
+        const btn = document.getElementById('btn-add-member');
+        if (btn) btn.style.display = 'none';
+      }
+      return true;
+    } catch {
+      window.location.href = '/login';
+      return false;
+    }
+  }
+
+  /* ── API helpers ── */
+  async function api(url, opts = {}) {
+    const res = await fetch(url, {
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      ...opts
+    });
+    if (res.status === 401) { window.location.href = '/login'; return null; }
+    const ct = res.headers.get('Content-Type') || '';
+    if (ct.includes('application/json')) return res.json();
+    throw new Error('Invalid response');
+  }
+
   /* ── Tab switching ── */
   const sidebarLinks = document.querySelectorAll('.sidebar-link[data-tab]');
   const tabPanels = document.querySelectorAll('.tab-panel');
@@ -29,29 +70,15 @@
     link.addEventListener('click', (e) => {
       e.preventDefault();
       const tab = link.dataset.tab;
-
       sidebarLinks.forEach(l => l.classList.remove('active'));
       link.classList.add('active');
-
       tabPanels.forEach(p => p.classList.remove('active'));
       const panel = document.getElementById('tab-' + tab);
       if (panel) panel.classList.add('active');
-
       if (dashTitle) dashTitle.textContent = link.querySelector('span').textContent;
       sidebar.classList.remove('open');
     });
   });
-
-  /* ── API helpers ── */
-  async function api(url, opts = {}) {
-    const res = await fetch(url, {
-      headers: { 'Content-Type': 'application/json' },
-      ...opts
-    });
-    const ct = res.headers.get('Content-Type') || '';
-    if (ct.includes('application/json')) return res.json();
-    throw new Error('Invalid response');
-  }
 
   /* ── Members ── */
   const membersBody = document.getElementById('members-table-body');
@@ -62,6 +89,7 @@
   async function loadMembers() {
     try {
       const data = await api('/api/members');
+      if (!data) return;
       const members = data.members || [];
 
       if (statMembers) statMembers.textContent = members.length;
@@ -75,27 +103,31 @@
             <tr>
               <td>${m.id}</td>
               <td><strong>${esc(m.username)}</strong></td>
-              <td><span class="role-badge role-${m.role}">${m.role}</span></td>
+              <td><span class="role-badge role-${sanitizeRole(m.role)}">${esc(m.role)}</span></td>
               <td>${formatDate(m.created_at)}</td>
               <td>
                 <div class="action-btns">
-                  <button class="action-btn edit" data-id="${m.id}" data-username="${esc(m.username)}" data-role="${m.role}" title="Edit">
+                  ${canManage ? `
+                  <button class="action-btn edit" data-id="${m.id}" data-username="${esc(m.username)}" data-role="${escAttr(m.role)}" title="Edit">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                   </button>
                   <button class="action-btn delete" data-id="${m.id}" data-username="${esc(m.username)}" title="Hapus">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                   </button>
+                  ` : '<span class="text-muted">-</span>'}
                 </div>
               </td>
             </tr>
           `).join('');
 
-          membersBody.querySelectorAll('.action-btn.edit').forEach(btn => {
-            btn.addEventListener('click', () => openEditModal(btn.dataset.id, btn.dataset.username, btn.dataset.role));
-          });
-          membersBody.querySelectorAll('.action-btn.delete').forEach(btn => {
-            btn.addEventListener('click', () => openDeleteModal(btn.dataset.id, btn.dataset.username));
-          });
+          if (canManage) {
+            membersBody.querySelectorAll('.action-btn.edit').forEach(btn => {
+              btn.addEventListener('click', () => openEditModal(btn.dataset.id, btn.dataset.username, btn.dataset.role));
+            });
+            membersBody.querySelectorAll('.action-btn.delete').forEach(btn => {
+              btn.addEventListener('click', () => openDeleteModal(btn.dataset.id, btn.dataset.username));
+            });
+          }
         }
       }
 
@@ -108,7 +140,7 @@
               <div class="ri-dot"></div>
               <div class="ri-info">
                 <span class="ri-user">${esc(m.username)}</span>
-                <span class="ri-action">${m.role}</span>
+                <span class="ri-action">${esc(m.role)}</span>
               </div>
             </div>
           `).join('');
@@ -127,6 +159,7 @@
   async function loadLogs() {
     try {
       const data = await api('/api/logs');
+      if (!data) return;
       const logs = data.logs || [];
 
       if (statLogs) statLogs.textContent = logs.length;
@@ -255,44 +288,60 @@
 
   /* ── Team Operators ── */
   const teamGrid = document.getElementById('team-grid');
-  const statTeam = document.getElementById('stat-logs');
 
   async function loadTeam() {
     try {
-      const data = await api('/api/team');
+      const data = await api('/api/team/all');
+      if (!data) return;
       const team = data.team || [];
 
       if (teamGrid) {
         if (team.length === 0) {
           teamGrid.innerHTML = '<p class="empty-text">Belum ada team operators.</p>';
         } else {
-          teamGrid.innerHTML = team.map(t => `
-            <div class="team-card">
-              <div class="team-card-img">
-                ${t.image ? `<img src="${esc(t.image)}" alt="${esc(t.name)}" loading="lazy">` : ''}
-              </div>
-              <div class="team-card-body">
-                <h4>${esc(t.name)}</h4>
-                <p class="tc-role">${esc(t.role)}</p>
-                <span class="role-badge role-member">${esc(t.tag)}</span>
-                <div class="team-card-actions" style="margin-top:10px">
-                  <button class="action-btn edit team-edit" data-id="${t.id}" data-name="${esc(t.name)}" data-role="${esc(t.role)}" data-tag="${esc(t.tag)}" data-image="${esc(t.image || '')}" title="Edit">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                  </button>
-                  <button class="action-btn delete team-delete" data-id="${t.id}" data-name="${esc(t.name)}" title="Hapus">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-          `).join('');
+          teamGrid.innerHTML = `
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Foto</th>
+                  <th>Nama</th>
+                  <th>Role</th>
+                  <th>Tag</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${team.map(t => `
+                  <tr>
+                    <td><img src="${esc(t.image || 'assets/default-avatar.png')}" alt="${esc(t.name)}" class="team-thumb" loading="lazy"></td>
+                    <td><strong>${esc(t.name)}</strong></td>
+                    <td>${esc(t.role)}</td>
+                    <td><span class="role-badge role-member">${esc(t.tag)}</span></td>
+                    <td>
+                      <div class="action-btns">
+                        ${canManage ? `
+                        <button class="action-btn edit team-edit" data-id="${t.id}" data-name="${esc(t.name)}" data-role="${esc(t.role)}" data-tag="${esc(t.tag)}" data-image="${esc(t.image || '')}" title="Edit">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                        <button class="action-btn delete team-delete" data-id="${t.id}" data-name="${esc(t.name)}" title="Hapus">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        </button>
+                        ` : '<span class="text-muted">-</span>'}
+                      </div>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>`;
 
-          teamGrid.querySelectorAll('.team-edit').forEach(btn => {
-            btn.addEventListener('click', () => openTeamEditModal(btn.dataset));
-          });
-          teamGrid.querySelectorAll('.team-delete').forEach(btn => {
-            btn.addEventListener('click', () => openTeamDeleteModal(btn.dataset.id, btn.dataset.name));
-          });
+          if (canManage) {
+            teamGrid.querySelectorAll('.team-edit').forEach(btn => {
+              btn.addEventListener('click', () => openTeamEditModal(btn.dataset));
+            });
+            teamGrid.querySelectorAll('.team-delete').forEach(btn => {
+              btn.addEventListener('click', () => openTeamDeleteModal(btn.dataset.id, btn.dataset.name));
+            });
+          }
         }
       }
     } catch (err) {
@@ -380,9 +429,67 @@
     }
   });
 
+  /* ── Support Messages ── */
+  const supportBody = document.getElementById('support-table-body');
+
+  async function loadSupport() {
+    try {
+      const data = await api('/api/support');
+      if (!data) return;
+      const messages = data.messages || [];
+
+      if (supportBody) {
+        if (messages.length === 0) {
+          supportBody.innerHTML = '<tr><td colspan="7" class="empty-text">Belum ada pesan support.</td></tr>';
+        } else {
+          supportBody.innerHTML = messages.map(m => `
+            <tr>
+              <td>${formatDate(m.created_at)}</td>
+              <td><strong>${esc(m.name)}</strong></td>
+              <td>${esc(m.email || '-')}</td>
+              <td><span class="role-badge role-member">${esc(m.category)}</span></td>
+              <td>${esc(m.subject)}</td>
+              <td class="support-msg-cell">${esc(m.message).substring(0, 50)}${m.message.length > 50 ? '...' : ''}</td>
+              <td>
+                <div class="action-btns">
+                  ${canManage ? `
+                  <button class="action-btn delete support-delete" data-id="${m.id}" title="Hapus">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  </button>
+                  ` : '<span class="text-muted">-</span>'}
+                </div>
+              </td>
+            </tr>
+          `).join('');
+
+          if (canManage) {
+            supportBody.querySelectorAll('.support-delete').forEach(btn => {
+              btn.addEventListener('click', async () => {
+                if (!confirm('Yakin ingin menghapus pesan ini?')) return;
+                try {
+                  await api('/api/support/' + btn.dataset.id, { method: 'DELETE' });
+                  loadSupport();
+                  loadLogs();
+                } catch (err) {
+                  alert('Gagal menghapus: ' + err.message);
+                }
+              });
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Gagal memuat support:', err);
+    }
+  }
+
+  const refreshSupportBtn = document.getElementById('btn-refresh-support');
+  if (refreshSupportBtn) refreshSupportBtn.addEventListener('click', loadSupport);
+
   /* ── Logout ── */
-  document.getElementById('logout-btn').addEventListener('click', () => {
-    window.location.href = '/login.html';
+  document.getElementById('logout-btn').addEventListener('click', async () => {
+    try { await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' }); } catch {}
+    window.location.href = '/login';
   });
 
   /* ── Helpers ── */
@@ -392,6 +499,14 @@
     return d.innerHTML;
   }
 
+  function escAttr(str) {
+    return (str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function sanitizeRole(role) {
+    return (role || '').replace(/[^a-zA-Z0-9_-]/g, '');
+  }
+
   function formatDate(dt) {
     if (!dt) return '-';
     const d = new Date(dt);
@@ -399,7 +514,12 @@
   }
 
   /* ── Init ── */
-  loadMembers();
-  loadLogs();
-  loadTeam();
+  (async () => {
+    const ok = await checkSession();
+    if (!ok) return;
+    loadMembers();
+    loadLogs();
+    loadTeam();
+    loadSupport();
+  })();
 })();
